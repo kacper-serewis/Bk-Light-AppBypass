@@ -56,17 +56,17 @@ def build_clock_png(now: datetime, color: tuple[int, int, int], accent: tuple[in
     height = bbox[3] - bbox[1]
     origin_x = (32 - width) / 2 - bbox[0]
     origin_y = (32 - height) / 2 - bbox[1]
-    light_color = tuple(min(255, int(channel * 1.1)) for channel in color)
+    light_color = tuple(max(0, int(channel * 0.9)) for channel in color)
     draw.text((origin_x, origin_y), text, fill=light_color, font=font)
     left_width = draw.textlength(text[:2], font=font)
     colon_width = draw.textlength(":", font=font)
-    spacing = max(1.0, size * 0.06)
+    spacing = max(1.5, size * 0.12)
     colon_x = origin_x + left_width + colon_width / 2 + spacing
     digit_bbox = draw.textbbox((0, 0), "0", font=font)
     digit_height = digit_bbox[3] - digit_bbox[1]
     baseline = origin_y + digit_bbox[1] + digit_height / 2
-    gap = digit_height * 0.32
-    dot_radius = max(1.2, digit_height * 0.1)
+    gap = digit_height * 0.38
+    dot_radius = max(1.0, digit_height * 0.08)
     top_y = baseline - gap
     bottom_y = baseline + gap
     draw.ellipse((colon_x - dot_radius, top_y - dot_radius, colon_x + dot_radius, top_y + dot_radius), fill=accent)
