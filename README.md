@@ -174,6 +174,20 @@ The tools assume the screen advertises as `LED_BLE_*` (BK-Light firmware). Updat
 - `scripts/send_image.py` – uploads any image with fit/cover/scale + rotate/mirror/invert.
 - `scripts/increment_counter.py` – numeric animation for diagnostics.
 - `scripts/identify_panels.py` – flashes digits on each configured panel.
+- `scripts/list_fonts.py`
+
+  Prints the fonts resolved from `assets/fonts/`. Bundled names today:
+  - `Aldo PC`
+  - `CaviarDreams`
+  - `Dolce Vita Light`
+  - `Eight One`
+  - `GeosansLight`
+  - `Kenyan Coffee Rg`
+  - `Kimberley Bl`
+
+  ```bash
+  python scripts/list_fonts.py [--config config.yaml]
+  ```
 
 Each script honours `--config`, `--address`, and preset overrides so you can reuse the same YAML in development or production.
 

@@ -28,3 +28,13 @@ def resolve_font(reference: Optional[str]) -> Optional[Path]:
     if relative_candidate.exists():
         return relative_candidate
     return candidate
+
+
+def list_available_fonts() -> list[str]:
+    if not FONTS_DIR.exists():
+        return []
+    names: list[str] = []
+    for entry in FONTS_DIR.iterdir():
+        if entry.is_file() and entry.suffix.lower() in FONT_EXTENSIONS:
+            names.append(entry.stem)
+    return sorted(names)
