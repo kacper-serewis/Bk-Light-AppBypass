@@ -59,41 +59,68 @@ def build_clock_image(
     antialias: bool,
 ) -> Image.Image:
     font = load_font(font_path, size)
-    display_text = text if colon_visible else text.replace(":", " ")
     dummy = Image.new("L", (1, 1), 0)
     draw_dummy = ImageDraw.Draw(dummy)
-    bbox = draw_dummy.textbbox((0, 0), display_text, font=font)
-    width = max(1, bbox[2] - bbox[0])
-    height = max(1, bbox[3] - bbox[1])
-    mask_mode = "L" if antialias else "1"
-    mask = Image.new(mask_mode, (width, height), 0)
-    draw_mask = ImageDraw.Draw(mask)
-    draw_mask.text((-bbox[0], -bbox[1]), display_text, fill=255, font=font)
-    if not antialias:
-        mask = mask.convert("L")
-    text_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    fill_layer = Image.new("RGBA", (width, height), (*color, 255))
-    text_layer = Image.composite(fill_layer, text_layer, mask)
+    parts = text.split(":", 1)
+    left_text = parts[0]
+    right_text = parts[1] if len(parts) > 1 else ""
+
+    def render_segment(segment: str) -> tuple[Image.Image, tuple[int, int, int, int]]:
+        if not segment:
+            empty = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+            return empty, (0, 0, 0, 0)
+        bbox = draw_dummy.textbbox((0, 0), segment, font=font)
+        width = max(1, bbox[2] - bbox[0])
+        height = max(1, bbox[3] - bbox[1])
+        mask_mode = "L" if antialias else "1"
+        mask = Image.new(mask_mode, (width, height), 0)
+        draw_mask = ImageDraw.Draw(mask)
+        draw_mask.text((-bbox[0], -bbox[1]), segment, fill=255, font=font)
+        if not antialias:
+            mask = mask.convert("L")
+        text_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        fill_layer = Image.new("RGBA", (width, height), (*color, 255))
+        text_layer = Image.composite(fill_layer, text_layer, mask)
+        return text_layer, bbox
+
+    left_segment, left_bbox = render_segment(left_text)
+    right_segment, right_bbox = render_segment(right_text)
+    left_width = draw_dummy.textlength(left_text, font=font)
+    right_width = draw_dummy.textlength(right_text, font=font)
+    colon_width = draw_dummy.textlength(":", font=font) if right_text else 0
+    total_width = max(1, int(round(left_width + colon_width + right_width)))
+    max_height = max(left_segment.height, right_segment.height, 1)
+
     frame = Image.new("RGBA", canvas, tuple(background) + (255,))
-    origin_x = int((canvas[0] - width) / 2 - bbox[0])
-    origin_y = int((canvas[1] - height) / 2 - bbox[1])
-    frame.alpha_composite(text_layer, (origin_x, origin_y))
+    base_x = int((canvas[0] - total_width) // 2)
+    base_y = int((canvas[1] - max_height) // 2)
+
+    frame.alpha_composite(left_segment, (base_x - left_bbox[0], base_y - left_bbox[1]))
+    if right_text:
+        frame.alpha_composite(
+            right_segment,
+            (base_x + int(round(left_width + colon_width)) - right_bbox[0], base_y - right_bbox[1])
+        )
+
     frame_rgb = frame.convert("RGB")
-    if colon_visible and ":" in text:
-        left = text.split(":")[0]
-        left_width = draw_dummy.textlength(left, font=font)
-        colon_x = origin_x + left_width + 1.5
+    if right_text:
+        colon_center_x = base_x + left_width + colon_width / 2
         digit_bbox = draw_dummy.textbbox((0, 0), "0", font=font)
         digit_height = digit_bbox[3] - digit_bbox[1]
-        baseline = origin_y + digit_bbox[1] + digit_height / 2
+        baseline = base_y - digit_bbox[1] + digit_height / 2
         gap = digit_height * 0.35
-        colon_column = int(round(colon_x))
+        colon_column = int(round(colon_center_x))
         top = int(round(baseline - gap))
         bottom = int(round(baseline + gap))
         colon_column = max(0, min(canvas[0] - 1, colon_column))
-        for row in (top, bottom):
-            if 0 <= row < canvas[1]:
-                frame_rgb.putpixel((colon_column, row), accent)
+        if colon_visible:
+            for row in (top, bottom):
+                if 0 <= row < canvas[1]:
+                    frame_rgb.putpixel((colon_column, row), accent)
+        else:
+            for row in range(top, bottom + 1):
+                if 0 <= row < canvas[1]:
+                    frame_rgb.putpixel((colon_column, row), background)
     return frame_rgb
 
 
