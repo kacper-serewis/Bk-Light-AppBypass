@@ -25,6 +25,7 @@ The tools assume the screen advertises as `LED_BLE_*` (BK-Light firmware) and is
 - `increment_counter.py` – renders an incrementing number and streams it to the screen.
 - `send_image.py` – pushes any image file with optional fit/transform options.
 - `display_text.py` – renders custom text with configurable colors and font.
+- `clock_display.py` – pushes a stylised HH:MM clock that follows the host timezone.
 
 ## Quick Start
 Set the panel MAC address once (PowerShell example):
@@ -74,6 +75,19 @@ python display_text.py "HELLO\\nWORLD" --color "#FF0066" --background "#000000" 
 - `--font` path to a TrueType font file.
 - `--size` font size when using a TrueType font.
 - `--spacing` line spacing for multiline text.
+- `--address` optional MAC override.
+
+### Stylised clock
+```bash
+python clock_display.py --interval 5.0
+```
+- `--color` primary time color.
+- `--accent` highlight color for the colon and gradient.
+- `--background` base gradient color.
+- `--font` optional TrueType font path.
+- `--size` font size when using a TrueType font.
+- `--interval` refresh cadence in seconds.
+- `--timezone` optional IANA timezone name override.
 - `--address` optional MAC override.
 
 ## Building New Effects
