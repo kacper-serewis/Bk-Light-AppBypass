@@ -59,18 +59,17 @@ def build_clock_png(now: datetime, color: tuple[int, int, int], accent: tuple[in
     light_color = tuple(max(0, int(channel * 0.9)) for channel in color)
     draw.text((origin_x, origin_y), text, fill=light_color, font=font)
     left_width = draw.textlength(text[:2], font=font)
-    colon_width = draw.textlength(":", font=font)
-    spacing = max(1.5, size * 0.12)
-    colon_x = origin_x + left_width + colon_width / 2 + spacing
+    spacing = max(2.0, size * 0.16)
+    colon_x = origin_x + left_width + spacing
     digit_bbox = draw.textbbox((0, 0), "0", font=font)
     digit_height = digit_bbox[3] - digit_bbox[1]
     baseline = origin_y + digit_bbox[1] + digit_height / 2
-    gap = digit_height * 0.38
-    dot_radius = max(1.0, digit_height * 0.08)
-    top_y = baseline - gap
-    bottom_y = baseline + gap
-    draw.ellipse((colon_x - dot_radius, top_y - dot_radius, colon_x + dot_radius, top_y + dot_radius), fill=accent)
-    draw.ellipse((colon_x - dot_radius, bottom_y - dot_radius, colon_x + dot_radius, bottom_y + dot_radius), fill=accent)
+    gap = digit_height * 0.35
+    dot_radius = 1.0
+    top_y = int(round(baseline - gap))
+    bottom_y = int(round(baseline + gap))
+    draw.point((int(round(colon_x)), top_y), fill=accent)
+    draw.point((int(round(colon_x)), bottom_y), fill=accent)
     buffer = BytesIO()
     base.save(buffer, format="PNG", optimize=False)
     return buffer.getvalue()
@@ -91,7 +90,7 @@ def resolve_palette(theme: str, color: Optional[tuple[int, int, int]], accent: O
         "dark": (
             (226, 232, 255),   # text
             (110, 125, 255),   # accent
-            (7, 9, 18),        # background base
+            (8, 8, 12),        # background base (near-black)
         ),
         "neon": (
             (240, 255, 255),
