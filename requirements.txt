@@ -1,4 +1,5 @@
 bleak
 Pillow
 PyYAML
+websockets
 

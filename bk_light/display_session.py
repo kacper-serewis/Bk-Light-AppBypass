@@ -189,47 +189,57 @@ class BleDisplaySession:
 
     async def send_png(self, png_bytes: bytes, delay: float = 0.2) -> None:
         processed = adjust_image(png_bytes, self.rotation, self.brightness)
+
+        if self.log_notifications:
+            print(f"Processed PNG bytes: {len(processed)}")
         frame = build_frame(processed)
         await self.send_frame(frame, delay)
 
     async def send_frame(self, frame: bytes, delay: float = 0.2) -> None:
+        self.log_notifications = True
         attempt = 0
         while True:
             attempt += 1
+            if self.log_notifications:
+                print(f"[send_frame] attempt {attempt}")
             try:
                 await self._ensure_connected()
                 self.watcher.reset()
+                if self.log_notifications:
+                    print(f"Writing to {UUID_WRITE} handshake 1 ({len(HANDSHAKE_FIRST)} bytes)")
                 await self.client.write_gatt_char(UUID_WRITE, HANDSHAKE_FIRST, response=False)
                 await wait_for_ack(self.watcher.stage_one, "HANDSHAKE_STAGE_ONE", self.log_notifications)
                 await asyncio.sleep(delay)
-                self.watcher.stage_two.clear()
-                skip_stage_two = False
-                try:
-                    await self.client.write_gatt_char(UUID_WRITE, HANDSHAKE_SECOND, response=False)
-                    await wait_for_ack(self.watcher.stage_two, "HANDSHAKE_STAGE_TWO", self.log_notifications)
-                except asyncio.TimeoutError:
-                    skip_stage_two = True
-                    if self.log_notifications:
-                        print("HANDSHAKE_STAGE_TWO_SKIPPED")
-                else:
-                    await asyncio.sleep(delay)
-                if skip_stage_two:
-                    await asyncio.sleep(delay)
+                if self.log_notifications:
+                    print(f"Writing to {UUID_WRITE} frame ({len(frame)} bytes)")
                 await self.client.write_gatt_char(UUID_WRITE, frame, response=True)
                 await wait_for_ack(self.watcher.stage_three, "FRAME_ACK", self.log_notifications)
                 await asyncio.sleep(delay)
-                # await self.client.write_gatt_char(UUID_WRITE, FRAME_VALIDATION, response=False)
+                await self.client.write_gatt_char(UUID_WRITE, FRAME_VALIDATION, response=False)
+                if self.log_notifications:
+                    print(f"[send_frame] success on attempt {attempt}")
                 return
             except (asyncio.TimeoutError, BleakError, ConnectionError) as error:
+                if self.log_notifications:
+                    print(f"[send_frame] attempt {attempt} failed with {type(error).__name__}: {error}")
                 if not self.auto_reconnect or attempt > self.max_retries:
+                    if self.log_notifications:
+                        print(f"[send_frame] giving up after {attempt} attempts")
                     await self._safe_disconnect()
                     raise error
+                if self.log_notifications:
+                    print(f"[send_frame] will retry after {self.reconnect_delay}s")
                 await self._safe_disconnect()
                 await asyncio.sleep(self.reconnect_delay)
             except Exception as error:
+                if self.log_notifications:
+                    print(f"[send_frame] attempt {attempt} failed with unexpected {type(error).__name__}: {error}")
                 if not self.auto_reconnect or attempt > self.max_retries:
+                    if self.log_notifications:
+                        print(f"[send_frame] giving up after {attempt} attempts")
                     await self._safe_disconnect()
                     raise error
+                if self.log_notifications:
+                    print(f"[send_frame] will retry after {self.reconnect_delay}s")
                 await self._safe_disconnect()
                 await asyncio.sleep(self.reconnect_delay)
-

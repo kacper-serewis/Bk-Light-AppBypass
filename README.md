@@ -182,6 +182,29 @@ The tools assume the screen advertises as `LED_BLE_*` (BK-Light firmware). Updat
   ```
 
 - `scripts/send_image.py` – uploads any image with fit/cover/scale + rotate/mirror/invert.
+
+  Fetch an image from Home Assistant (e.g. a `media_player` entity with `entity_picture`):
+
+  ```bash
+  python scripts/send_image.py --ha-base-url "https://ha.local:8123" --ha-token "YOUR_LONG_LIVED_TOKEN" --ha-entity "media_player.living_room"
+  ```
+
+- `scripts/watch_ha_media_player.py` – watches a Home Assistant entity via WebSocket (`state_changed`) and updates the panel with the current entity picture.
+
+  ```bash
+  python scripts/watch_ha_media_player.py --ha-base-url "https://ha.local:8123" --ha-token "YOUR_LONG_LIVED_TOKEN" --ha-entity "media_player.living_room"
+  ```
+
+  If multi-panel updates feel staggered, try reducing the BLE delay (Windows BLE stacks often serialize large writes):
+
+  ```bash
+  python scripts/watch_ha_media_player.py --ha-base-url "https://ha.local:8123" --ha-token "YOUR_LONG_LIVED_TOKEN" --ha-entity "media_player.living_room" --ble-delay 0.05
+  ```
+- `scripts/watch_ha_media_or_clock.py` – hybrid mode: shows media cover art while the player state is `playing`; otherwise falls back to the Minecraft clock sprite animation.
+
+  ```bash
+  python scripts/watch_ha_media_or_clock.py --ha-base-url "https://ha.local:8123" --ha-token "YOUR_LONG_LIVED_TOKEN" --ha-entity "media_player.living_room"
+  ```
 - `scripts/increment_counter.py` – numeric animation for diagnostics.
 - `scripts/identify_panels.py` – flashes digits on each configured panel.
 - `scripts/list_fonts.py`

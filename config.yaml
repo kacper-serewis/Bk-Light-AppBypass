@@ -2,9 +2,9 @@ device:
   address: "F0:27:3C:1A:8B:C3"
   auto_reconnect: true
   reconnect_delay: 2.0
-  mtu: 2048
+  mtu: 512
   rotate: 0
-  brightness: 0.15
+  brightness: 0.85
   timezone: auto
   scan_timeout: 6.0
 
@@ -12,10 +12,29 @@ panels:
   tile_width: 32
   tile_height: 32
   layout:
-    columns: 1
-    rows: 1
-  list: ["F0:27:3C:1A:8B:C3"]
-
+    columns: 2
+    rows: 2
+  list:
+    - name: bottom_right
+      address: "B6:8C:4C:7A:F1:CF"
+      grid_x: 1
+      grid_y: 1
+      rotation: 270
+    - name: top_right
+      address: "55:20:11:06:56:74"
+      grid_x: 1
+      grid_y: 0
+      rotation: 270
+    - name: bottom_left
+      address: "F4:26:46:AB:9F:B1"
+      grid_x: 0
+      grid_y: 1
+      rotation: 90
+    - name: top_left
+      address: "02:71:78:44:71:AC"
+      grid_x: 0
+      grid_y: 0
+      rotation: 90
 display:
   frame_interval: 0.05
   max_retries: 3
@@ -23,10 +42,12 @@ display:
   antialias_text: false
 
 runtime:
-  mode: clock
-  preset: default
+  mode: text
+  preset: marquee_left
   options:
-    timezone: "Europe/Paris"
+    text: "Hello World, Kacper Serewis hier."
+    color: "#00FFAA"
+    background: "#000000"
     
 presets:
   clock:
