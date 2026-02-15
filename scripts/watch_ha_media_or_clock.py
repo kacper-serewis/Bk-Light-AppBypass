@@ -28,6 +28,8 @@ from bk_light.panel_manager import PanelManager
 SPRITE_SIZE = 16
 SPRITES_PER_ROW = 8
 SPRITE_COUNT = 64
+NIGHT_BRIGHTNESS = 0.15
+DAY_PEAK_BRIGHTNESS = 0.85
 
 
 def resolve_timezone(config: AppConfig, override: Optional[str]) -> timezone:
@@ -46,6 +48,22 @@ def get_clock_index(now: datetime) -> int:
     total_minutes = now.hour * 60 + now.minute
     normalized_minutes = (total_minutes + 720) % 1440
     return int(normalized_minutes / 1440 * SPRITE_COUNT)
+
+
+def get_dynamic_brightness(now: datetime) -> float:
+    minutes = now.hour * 60 + now.minute + (now.second / 60.0)
+    morning_start = 7 * 60
+    peak = 15 * 60
+    evening_end = 23 * 60
+
+    if minutes < morning_start or minutes >= evening_end:
+        return NIGHT_BRIGHTNESS
+    if minutes <= peak:
+        progress = (minutes - morning_start) / (peak - morning_start)
+        return NIGHT_BRIGHTNESS + (DAY_PEAK_BRIGHTNESS - NIGHT_BRIGHTNESS) * progress
+
+    progress = (minutes - peak) / (evening_end - peak)
+    return DAY_PEAK_BRIGHTNESS - (DAY_PEAK_BRIGHTNESS - NIGHT_BRIGHTNESS) * progress
 
 
 def render_minecraft_clock_sprite(sprite_sheet: Image.Image, index: int) -> Image.Image:
@@ -143,6 +161,11 @@ async def run_watch(config: AppConfig, args: argparse.Namespace) -> None:
     async with PanelManager(config) as manager:
         canvas = manager.canvas_size
 
+        def apply_dynamic_brightness() -> None:
+            brightness = get_dynamic_brightness(datetime.now(tz))
+            for panel_session in manager.sessions:
+                panel_session.session.brightness = brightness
+
         async def send_cover(force: bool = False) -> None:
             nonlocal last_sent_cover_at, last_cover_hash, last_clock_index, showing_cover
 
@@ -175,6 +198,7 @@ async def run_watch(config: AppConfig, args: argparse.Namespace) -> None:
                 scale_resample=Image.Resampling.LANCZOS,
             )
             async with send_lock:
+                apply_dynamic_brightness()
                 await manager.send_image(image, delay=ble_delay)
                 last_cover_hash = current_hash
                 last_sent_cover_at = time.monotonic()
@@ -201,6 +225,7 @@ async def run_watch(config: AppConfig, args: argparse.Namespace) -> None:
                 scale_resample=Image.Resampling.BOX,
             )
             async with send_lock:
+                apply_dynamic_brightness()
                 await manager.send_image(image, delay=ble_delay)
                 last_clock_index = clock_index
                 showing_cover = False
